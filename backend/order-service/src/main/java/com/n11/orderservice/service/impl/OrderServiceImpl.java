@@ -1,5 +1,6 @@
 package com.n11.orderservice.service.impl;
 
+import com.n11.orderservice.client.ProductClient;
 import com.n11.orderservice.entity.Order;
 import com.n11.orderservice.entity.OrderItem;
 import com.n11.orderservice.enums.OrderStatus;
@@ -13,6 +14,7 @@ import com.n11.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,6 +26,7 @@ import java.util.List;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final ProductClient productClient;
 
     @Override
     public OrderResponse create(CreateOrderRequest request) {
@@ -126,6 +129,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public void updateStatusAfterPayment(Long orderId, boolean paymentSuccess) {
         log.info("Updating order status after payment. orderId={}, paymentSuccess={}",
                 orderId, paymentSuccess);
@@ -136,7 +140,15 @@ public class OrderServiceImpl implements OrderService {
                     return new OrderNotFoundException(orderId);
                 });
 
-        order.setStatus(paymentSuccess ? OrderStatus.PAID : OrderStatus.CANCELLED);
+        if (paymentSuccess) {
+            order.setStatus(OrderStatus.PAID);
+
+            order.getItems().forEach(item ->
+                    productClient.decreaseStock(item.getProductId(), item.getQuantity())
+            );
+        } else {
+            order.setStatus(OrderStatus.CANCELLED);
+        }
 
         orderRepository.save(order);
 

@@ -45,3 +45,7 @@ eureka:
       defaultZone: http://discovery-server:8761/eureka/
   instance:
     prefer-ip-address: true
+
+services:
+  product-service:
+    url: http://product-service:8082

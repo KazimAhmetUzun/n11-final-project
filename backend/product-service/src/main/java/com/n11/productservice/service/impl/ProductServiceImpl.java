@@ -2,6 +2,7 @@ package com.n11.productservice.service.impl;
 
 
 import com.n11.productservice.entity.Product;
+import com.n11.productservice.exception.InsufficientStockException;
 import com.n11.productservice.exception.ProductNotFoundException;
 import com.n11.productservice.repository.ProductRepository;
 import com.n11.productservice.request.ProductRequest;
@@ -82,5 +83,36 @@ public class ProductServiceImpl implements ProductService {
                 .imageUrl(product.getImageUrl())
                 .categoryName(product.getCategoryName())
                 .build();
+    }
+
+    @Override
+    public ProductResponse decreaseStock(Long id, int quantity) {
+        log.info("Decreasing product stock. productId={}, quantity={}", id, quantity);
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product stock decrease failed. Product not found. productId={}", id);
+                    return new ProductNotFoundException(id);
+                });
+
+        if (quantity <= 0) {
+            log.warn("Product stock decrease failed. Quantity must be positive. productId={}, quantity={}", id, quantity);
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+
+        if (product.getStock() < quantity) {
+            log.warn("Product stock decrease failed. Insufficient stock. productId={}, requestedQuantity={}, availableStock={}",
+                    id, quantity, product.getStock());
+            throw new InsufficientStockException(id, quantity, product.getStock());
+        }
+
+        product.setStock(product.getStock() - quantity);
+
+        Product savedProduct = productRepository.save(product);
+
+        log.info("Product stock decreased successfully. productId={}, remainingStock={}",
+                savedProduct.getId(), savedProduct.getStock());
+
+        return toResponse(savedProduct);
     }
 }

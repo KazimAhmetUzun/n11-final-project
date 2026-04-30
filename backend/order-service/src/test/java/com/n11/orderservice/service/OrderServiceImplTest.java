@@ -1,5 +1,6 @@
 package com.n11.orderservice.service;
 
+import com.n11.orderservice.client.ProductClient;
 import com.n11.orderservice.entity.Order;
 import com.n11.orderservice.entity.OrderItem;
 import com.n11.orderservice.enums.OrderStatus;
@@ -29,6 +30,9 @@ class OrderServiceImplTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private ProductClient productClient;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -109,7 +113,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    void updateStatusAfterPayment_WhenPaymentSuccess_ShouldSetStatusPaid() {
+    void updateStatusAfterPayment_WhenPaymentSuccess_ShouldSetStatusPaidAndDecreaseStock() {
         Order order = createOrder();
 
         when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
@@ -119,6 +123,7 @@ class OrderServiceImplTest {
 
         assertEquals(OrderStatus.PAID, order.getStatus());
 
+        verify(productClient, times(1)).decreaseStock(1L, 2);
         verify(orderRepository, times(1)).findById(1L);
         verify(orderRepository, times(1)).save(order);
     }
@@ -134,6 +139,7 @@ class OrderServiceImplTest {
 
         assertEquals(OrderStatus.CANCELLED, order.getStatus());
 
+        verify(productClient, never()).decreaseStock(anyLong(), anyInt());
         verify(orderRepository, times(1)).findById(1L);
         verify(orderRepository, times(1)).save(order);
     }

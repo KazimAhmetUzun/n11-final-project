@@ -1,6 +1,7 @@
 package com.n11.productservice.service;
 
 import com.n11.productservice.entity.Product;
+import com.n11.productservice.exception.InsufficientStockException;
 import com.n11.productservice.exception.ProductNotFoundException;
 import com.n11.productservice.repository.ProductRepository;
 import com.n11.productservice.request.ProductRequest;
@@ -125,5 +126,70 @@ class ProductServiceImplTest {
         assertTrue(response.isLast());
 
         verify(productRepository, times(1)).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void decreaseStock_WhenStockIsEnough_ShouldDecreaseStockAndReturnProduct() {
+        Product product = Product.builder()
+                .id(1L)
+                .name("iPhone 15")
+                .description("Apple iPhone 15 128GB")
+                .price(BigDecimal.valueOf(49999.99))
+                .stock(10)
+                .imageUrl("https://example.com/iphone15.jpg")
+                .categoryName("Telefon")
+                .build();
+
+        Product savedProduct = Product.builder()
+                .id(1L)
+                .name("iPhone 15")
+                .description("Apple iPhone 15 128GB")
+                .price(BigDecimal.valueOf(49999.99))
+                .stock(7)
+                .imageUrl("https://example.com/iphone15.jpg")
+                .categoryName("Telefon")
+                .build();
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
+
+        ProductResponse response = productService.decreaseStock(1L, 3);
+
+        assertNotNull(response);
+        assertEquals(1L, response.getId());
+        assertEquals(7, response.getStock());
+
+        verify(productRepository, times(1)).findById(1L);
+        verify(productRepository, times(1)).save(product);
+    }
+
+    @Test
+    void decreaseStock_WhenStockIsNotEnough_ShouldThrowException() {
+        Product product = Product.builder()
+                .id(1L)
+                .name("iPhone 15")
+                .description("Apple iPhone 15 128GB")
+                .price(BigDecimal.valueOf(49999.99))
+                .stock(2)
+                .imageUrl("https://example.com/iphone15.jpg")
+                .categoryName("Telefon")
+                .build();
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        assertThrows(InsufficientStockException.class, () -> productService.decreaseStock(1L, 3));
+
+        verify(productRepository, times(1)).findById(1L);
+        verify(productRepository, never()).save(any(Product.class));
+    }
+
+    @Test
+    void decreaseStock_WhenProductDoesNotExist_ShouldThrowException() {
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.decreaseStock(99L, 1));
+
+        verify(productRepository, times(1)).findById(99L);
+        verify(productRepository, never()).save(any(Product.class));
     }
 }
