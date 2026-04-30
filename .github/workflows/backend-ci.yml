@@ -108,3 +108,26 @@ jobs:
       - name: Build api-gateway
         working-directory: backend/api-gateway
         run: mvn package -DskipTests
+
+  notify-slack:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    needs:
+      - backend-tests
+      - backend-build
+    if: always()
+
+    steps:
+      - name: Send success message to Slack
+        if: needs.backend-tests.result == 'success' && needs.backend-build.result == 'success'
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ Backend CI başarılı. Testler ve build geçti. Repository: ${{ github.repository }} Branch: ${{ github.ref_name }} Commit: ${{ github.sha }}"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Send failure message to Slack
+        if: needs.backend-tests.result != 'success' || needs.backend-build.result != 'success'
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"❌ Backend CI başarısız. Test veya build adımlarında hata var. Repository: ${{ github.repository }} Branch: ${{ github.ref_name }} Commit: ${{ github.sha }}"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
