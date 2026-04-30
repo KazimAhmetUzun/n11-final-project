@@ -1,0 +1,49 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/auth_db
+    username: postgres
+    password: postgres
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: "my-super-secret-key-my-super-secret-key-123456"
+  expiration: 86400000
+
+  springdoc:
+    api-docs:
+      enabled: true
+      path: /v3/api-docs
+    swagger-ui:
+      enabled: true
+      path: /swagger-ui.html
+
+      logging:
+        level:
+          root: INFO
+          com.n11.authservice: DEBUG
+
+          eureka:
+            client:
+              service-url:
+                defaultZone: http://localhost:8761/eureka/
+            instance:
+              prefer-ip-address: true
