@@ -12,4 +12,6 @@ public interface ProductService {
     PagedResponse<ProductResponse> getAll(int page, int size);
 
     ProductResponse getById(Long id);
+
+    ProductResponse decreaseStock(Long id, int quantity);
 }

@@ -32,4 +32,11 @@ public class ProductController {
     public ProductResponse getById(@PathVariable Long id) {
         return productService.getById(id);
     }
+
+    @PatchMapping("/{id}/decrease-stock")
+    public ProductResponse decreaseStock(
+            @PathVariable Long id,
+            @RequestParam int quantity) {
+        return productService.decreaseStock(id, quantity);
+    }
 }
