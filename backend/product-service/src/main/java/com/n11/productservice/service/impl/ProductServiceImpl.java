@@ -5,12 +5,14 @@ import com.n11.productservice.entity.Product;
 import com.n11.productservice.exception.ProductNotFoundException;
 import com.n11.productservice.repository.ProductRepository;
 import com.n11.productservice.request.ProductRequest;
+import com.n11.productservice.response.PagedResponse;
 import com.n11.productservice.response.ProductResponse;
 import com.n11.productservice.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -41,11 +43,23 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Page<ProductResponse> getAll(int page, int size) {
+    public PagedResponse<ProductResponse> getAll(int page, int size) {
         log.info("Fetching products. page={}, size={}", page, size);
 
-        return productRepository.findAll(PageRequest.of(page, size))
-                .map(this::toResponse);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productRepository.findAll(pageable);
+
+        return PagedResponse.<ProductResponse>builder()
+                .content(productPage.getContent()
+                        .stream()
+                        .map(this::toResponse)
+                        .toList())
+                .page(productPage.getNumber())
+                .size(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .last(productPage.isLast())
+                .build();
     }
 
     @Override

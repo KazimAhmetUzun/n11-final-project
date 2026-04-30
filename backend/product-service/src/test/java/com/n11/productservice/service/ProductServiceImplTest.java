@@ -4,6 +4,7 @@ import com.n11.productservice.entity.Product;
 import com.n11.productservice.exception.ProductNotFoundException;
 import com.n11.productservice.repository.ProductRepository;
 import com.n11.productservice.request.ProductRequest;
+import com.n11.productservice.response.PagedResponse;
 import com.n11.productservice.response.ProductResponse;
 import com.n11.productservice.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -113,11 +114,15 @@ class ProductServiceImplTest {
 
         when(productRepository.findAll(any(Pageable.class))).thenReturn(productPage);
 
-        Page<ProductResponse> response = productService.getAll(0, 10);
+        PagedResponse<ProductResponse> response = productService.getAll(0, 10);
 
         assertNotNull(response);
         assertEquals(1, response.getContent().size());
         assertEquals("iPhone 15", response.getContent().get(0).getName());
+        assertEquals(0, response.getPage());
+        assertEquals(1, response.getTotalPages());
+        assertEquals(1, response.getTotalElements());
+        assertTrue(response.isLast());
 
         verify(productRepository, times(1)).findAll(any(Pageable.class));
     }
