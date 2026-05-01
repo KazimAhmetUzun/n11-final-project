@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { clearCart } from "../api/cartApi";
 import { getOrderById } from "../api/orderApi";
 import { createPayment } from "../api/paymentApi";
+import { isLoggedIn } from "../utils/authStorage";
+import { getUserEmail } from "../utils/authStorage";
 
 function Payment() {
     const { orderId } = useParams();
@@ -20,7 +22,7 @@ function Payment() {
     const [buyer, setBuyer] = useState({
         name: "Test",
         surname: "User",
-        email: "test@example.com",
+        email: getUserEmail() || "",
         identityNumber: "11111111111",
         phone: "+905350000000",
         city: "Istanbul",
@@ -50,6 +52,11 @@ function Payment() {
     };
 
     useEffect(() => {
+        if (!isLoggedIn()) {
+            navigate("/login");
+            return;
+        }
+
         fetchOrder();
     }, [orderId]);
 

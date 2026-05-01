@@ -328,3 +328,49 @@
     color: #8a4300;
     font-size: 14px;
 }
+.auth-page {
+    display: flex;
+    justify-content: center;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.auth-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-weight: bold;
+}
+
+.auth-form input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.user-email {
+    color: white;
+    font-weight: bold;
+}
+
+.logout-button {
+    border: 1px solid white;
+    background-color: transparent;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
