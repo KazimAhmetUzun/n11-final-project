@@ -1,8 +1,12 @@
 package com.n11.paymentservice.service;
 
 import com.n11.paymentservice.client.IyzicoPaymentClient;
+import com.n11.paymentservice.client.OrderClient;
+import com.n11.paymentservice.client.OrderResponse;
 import com.n11.paymentservice.entity.Payment;
 import com.n11.paymentservice.enums.PaymentStatus;
+import com.n11.paymentservice.event.PaymentResultEvent;
+import com.n11.paymentservice.exception.PaymentAmountMismatchException;
 import com.n11.paymentservice.publisher.PaymentResultPublisher;
 import com.n11.paymentservice.repository.PaymentRepository;
 import com.n11.paymentservice.request.BuyerRequest;
@@ -10,7 +14,6 @@ import com.n11.paymentservice.request.PaymentCardRequest;
 import com.n11.paymentservice.request.PaymentRequest;
 import com.n11.paymentservice.response.PaymentResponse;
 import com.n11.paymentservice.service.impl.PaymentServiceImpl;
-import com.n11.paymentservice.event.PaymentResultEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,12 +40,17 @@ class PaymentServiceImplTest {
     @Mock
     private IyzicoPaymentClient iyzicoPaymentClient;
 
+    @Mock
+    private OrderClient orderClient;
+
     @InjectMocks
     private PaymentServiceImpl paymentService;
 
     @Test
     void pay_WhenIyzicoPaymentSuccess_ShouldSavePaymentPublishEventAndReturnSuccessResponse() {
         PaymentRequest request = createPaymentRequest();
+
+        when(orderClient.getOrderById(1L)).thenReturn(createOrderResponse());
 
         com.iyzipay.model.Payment iyzicoPayment = new com.iyzipay.model.Payment();
         iyzicoPayment.setStatus("success");
@@ -73,6 +81,7 @@ class PaymentServiceImplTest {
         assertEquals(PaymentStatus.SUCCESS, response.getStatus());
         assertNull(response.getErrorMessage());
 
+        verify(orderClient, times(1)).getOrderById(1L);
         verify(iyzicoPaymentClient, times(1)).createPayment(request);
         verify(paymentRepository, times(1)).save(any(Payment.class));
         verify(paymentResultPublisher, times(1)).publish(any(PaymentResultEvent.class));
@@ -81,6 +90,8 @@ class PaymentServiceImplTest {
     @Test
     void pay_WhenIyzicoPaymentFailed_ShouldSavePaymentPublishEventAndReturnFailedResponse() {
         PaymentRequest request = createPaymentRequest();
+
+        when(orderClient.getOrderById(1L)).thenReturn(createOrderResponse());
 
         com.iyzipay.model.Payment iyzicoPayment = new com.iyzipay.model.Payment();
         iyzicoPayment.setStatus("failure");
@@ -107,9 +118,39 @@ class PaymentServiceImplTest {
         assertEquals(PaymentStatus.FAILED, response.getStatus());
         assertEquals("Payment failed", response.getErrorMessage());
 
+        verify(orderClient, times(1)).getOrderById(1L);
         verify(iyzicoPaymentClient, times(1)).createPayment(request);
         verify(paymentRepository, times(1)).save(any(Payment.class));
         verify(paymentResultPublisher, times(1)).publish(any(PaymentResultEvent.class));
+    }
+
+    @Test
+    void pay_WhenAmountDoesNotMatchOrderTotal_ShouldThrowException() {
+        PaymentRequest request = createPaymentRequest();
+        request.setAmount(BigDecimal.valueOf(1.00));
+
+        when(orderClient.getOrderById(1L)).thenReturn(createOrderResponse());
+
+        assertThrows(PaymentAmountMismatchException.class, () -> paymentService.pay(request));
+
+        verify(orderClient, times(1)).getOrderById(1L);
+        verify(iyzicoPaymentClient, never()).createPayment(any(PaymentRequest.class));
+        verify(paymentRepository, never()).save(any(Payment.class));
+        verify(paymentResultPublisher, never()).publish(any(PaymentResultEvent.class));
+    }
+
+    @Test
+    void pay_WhenOrderDoesNotExist_ShouldThrowException() {
+        PaymentRequest request = createPaymentRequest();
+
+        when(orderClient.getOrderById(1L)).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> paymentService.pay(request));
+
+        verify(orderClient, times(1)).getOrderById(1L);
+        verify(iyzicoPaymentClient, never()).createPayment(any(PaymentRequest.class));
+        verify(paymentRepository, never()).save(any(Payment.class));
+        verify(paymentResultPublisher, never()).publish(any(PaymentResultEvent.class));
     }
 
     @Test
@@ -217,5 +258,14 @@ class PaymentServiceImplTest {
                 .errorMessage(null)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+
+    private OrderResponse createOrderResponse() {
+        OrderResponse orderResponse = new OrderResponse();
+        orderResponse.setId(1L);
+        orderResponse.setUserEmail("kazim@test.com");
+        orderResponse.setStatus("CREATED");
+        orderResponse.setTotalPrice(BigDecimal.valueOf(10.00));
+        return orderResponse;
     }
 }
