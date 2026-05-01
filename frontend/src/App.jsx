@@ -9,6 +9,7 @@ import ProductList from "./pages/ProductList";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import { clearAuth, getUserEmail, isLoggedIn } from "./utils/authStorage";
+import Orders from "./pages/Orders";
 import "./App.css";
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
 
                     {loggedIn ? (
                         <>
+                            <Link to="/orders">Siparişlerim</Link>
                             <span className="user-email">{getUserEmail()}</span>
                             <button className="logout-button" onClick={handleLogout}>
                                 Çıkış Yap
@@ -59,6 +61,7 @@ function App() {
                     <Route path="/" element={<ProductList />} />
                     <Route path="/products/:id" element={<ProductDetail />} />
                     <Route path="/cart" element={<Cart />} />
+                    <Route path="/orders" element={<Orders />} />
                     <Route path="/orders/:orderId/payment" element={<Payment />} />
                     <Route path="/orders/:orderId" element={<OrderDetail />} />
                     <Route path="/login" element={<Login onLogin={handleLogin} />} />

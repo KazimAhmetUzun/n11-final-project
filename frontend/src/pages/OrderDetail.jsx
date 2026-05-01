@@ -42,8 +42,8 @@ function OrderDetail() {
 
     return (
         <section>
-            <Link to="/" className="back-link">
-                ← Ürünlere geri dön
+            <Link to="/orders" className="back-link">
+                ← Siparişlerime geri dön
             </Link>
 
             <div className="order-detail-card">
@@ -64,6 +64,12 @@ function OrderDetail() {
                 <p>
                     <strong>Toplam:</strong> {order.totalPrice} TL
                 </p>
+
+                {order.status === "CREATED" && (
+                    <Link to={`/orders/${order.id}/payment`} className="primary-button">
+                    Ödeme Yap
+                    </Link>
+                )}
 
                 <h3>Ürünler</h3>
 
