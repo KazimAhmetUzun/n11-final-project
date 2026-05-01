@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { getProductById } from "../api/productApi";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { addToCart } from "../api/cartApi";
+import { getProductById } from "../api/productApi";
+import { isLoggedIn } from "../utils/authStorage";
 
 function ProductDetail() {
     const { id } = useParams();
@@ -10,6 +11,7 @@ function ProductDetail() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+    const navigate = useNavigate();
 
     const fetchProduct = async () => {
         try {
@@ -27,6 +29,11 @@ function ProductDetail() {
     };
 
     const handleAddToCart = async () => {
+        if (!isLoggedIn()) {
+            navigate("/login");
+            return;
+        }
+
         try {
             setSuccessMessage("");
             await addToCart(product, 1);

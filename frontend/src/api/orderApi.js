@@ -1,8 +1,19 @@
 import axiosClient from "./axiosClient";
+import { getUserEmail } from "../utils/authStorage";
 
-const TEMP_USER_EMAIL = "test@example.com";
+const getRequiredUserEmail = () => {
+    const userEmail = getUserEmail();
+
+    if (!userEmail) {
+        throw new Error("User is not logged in.");
+    }
+
+    return userEmail;
+};
 
 export const createOrder = async (cartItems) => {
+    const userEmail = getRequiredUserEmail();
+
     const items = cartItems.map((item) => ({
         productId: item.productId,
         productName: item.productName,
@@ -11,7 +22,7 @@ export const createOrder = async (cartItems) => {
     }));
 
     const response = await axiosClient.post("/api/orders", {
-        userEmail: TEMP_USER_EMAIL,
+        userEmail,
         items,
     });
 
@@ -24,6 +35,8 @@ export const getOrderById = async (orderId) => {
 };
 
 export const getOrdersByUserEmail = async () => {
-    const response = await axiosClient.get(`/api/orders/user/${TEMP_USER_EMAIL}`);
+    const userEmail = getRequiredUserEmail();
+
+    const response = await axiosClient.get(`/api/orders/user/${userEmail}`);
     return response.data;
 };

@@ -7,6 +7,7 @@ import {
     updateCartItem,
 } from "../api/cartApi";
 import { createOrder } from "../api/orderApi";
+import { isLoggedIn } from "../utils/authStorage";
 
 function Cart() {
     const [items, setItems] = useState([]);
@@ -30,6 +31,11 @@ function Cart() {
     };
 
     useEffect(() => {
+        if (!isLoggedIn()) {
+            navigate("/login");
+            return;
+        }
+
         fetchCart();
     }, []);
 
