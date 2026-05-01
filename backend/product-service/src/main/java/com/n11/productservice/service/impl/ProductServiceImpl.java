@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -47,7 +48,7 @@ public class ProductServiceImpl implements ProductService {
     public PagedResponse<ProductResponse> getAll(int page, int size) {
         log.info("Fetching products. page={}, size={}", page, size);
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<Product> productPage = productRepository.findAll(pageable);
 
         return PagedResponse.<ProductResponse>builder()

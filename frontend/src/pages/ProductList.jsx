@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getProducts } from "../api/productApi";
 
 function ProductList() {
@@ -74,6 +75,9 @@ function ProductList() {
 
                         <p>Stok: {product.stock}</p>
                         <p>Kategori: {product.categoryName}</p>
+                        <Link to={`/products/${product.id}`} className="detail-button">
+                            Detaya Git
+                        </Link>
                     </div>
                 ))}
             </div>
