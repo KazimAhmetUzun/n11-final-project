@@ -1,18 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { createPayment } from "../api/paymentApi";
 import { clearCart } from "../api/cartApi";
+import { getOrderById } from "../api/orderApi";
+import { createPayment } from "../api/paymentApi";
 
 function Payment() {
     const { orderId } = useParams();
 
-    const [amount, setAmount] = useState("");
+    const [order, setOrder] = useState(null);
+
     const [card, setCard] = useState({
-        cardHolderName: "John Doe",
-        cardNumber: "5528790000000008",
-        expireMonth: "12",
-        expireYear: "2030",
-        cvc: "123",
+        cardHolderName: "",
+        cardNumber: "",
+        expireMonth: "",
+        expireYear: "",
+        cvc: "",
     });
 
     const [buyer, setBuyer] = useState({
@@ -28,8 +30,28 @@ function Payment() {
     });
 
     const [loading, setLoading] = useState(false);
+    const [orderLoading, setOrderLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
+
+    const fetchOrder = async () => {
+        try {
+            setOrderLoading(true);
+            setError("");
+
+            const data = await getOrderById(orderId);
+            setOrder(data);
+        } catch (err) {
+            console.error(err);
+            setError("Sipariş bilgisi yüklenirken bir hata oluştu.");
+        } finally {
+            setOrderLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchOrder();
+    }, [orderId]);
 
     const handleCardChange = (event) => {
         const { name, value } = event.target;
@@ -49,11 +71,30 @@ function Payment() {
         }));
     };
 
+    const validateCardForm = () => {
+        if (
+            !card.cardHolderName ||
+            !card.cardNumber ||
+            !card.expireMonth ||
+            !card.expireYear ||
+            !card.cvc
+        ) {
+            setError("Lütfen kart bilgilerini eksiksiz girin.");
+            return false;
+        }
+
+        return true;
+    };
+
     const handlePayment = async (event) => {
         event.preventDefault();
 
-        if (!amount || Number(amount) <= 0) {
-            setError("Lütfen geçerli bir ödeme tutarı girin.");
+        if (!order) {
+            setError("Sipariş bilgisi bulunamadı.");
+            return;
+        }
+
+        if (!validateCardForm()) {
             return;
         }
 
@@ -64,7 +105,7 @@ function Payment() {
 
             const paymentResponse = await createPayment({
                 orderId: Number(orderId),
-                amount: Number(amount),
+                amount: Number(order.totalPrice),
                 card,
                 buyer,
             });
@@ -73,9 +114,8 @@ function Payment() {
 
             if (paymentResponse.status === "SUCCESS") {
                 await clearCart();
+                await fetchOrder();
             }
-
-            setResult(paymentResponse);
         } catch (err) {
             console.error(err);
             setError("Ödeme işlemi sırasında bir hata oluştu.");
@@ -84,6 +124,10 @@ function Payment() {
         }
     };
 
+    if (orderLoading) {
+        return <p>Sipariş bilgisi yükleniyor...</p>;
+    }
+
     return (
         <section>
             <Link to="/cart" className="back-link">
@@ -91,26 +135,30 @@ function Payment() {
             </Link>
 
             <h2>Ödeme Sayfası</h2>
-            <p>Sipariş ID: {orderId}</p>
+
+            {order && (
+                <div className="payment-order-summary">
+                    <p>
+                        <strong>Sipariş ID:</strong> {order.id}
+                    </p>
+
+                    <p>
+                        <strong>Sipariş Durumu:</strong> {order.status}
+                    </p>
+
+                    <p className="payment-total">
+                        <strong>Ödenecek Tutar:</strong> {order.totalPrice} TL
+                    </p>
+                </div>
+            )}
 
             <form className="payment-form" onSubmit={handlePayment}>
                 <div className="form-section">
-                    <h3>Ödeme Bilgileri</h3>
-
-                    <label>
-                        Ödeme Tutarı
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={amount}
-                            onChange={(event) => setAmount(event.target.value)}
-                            placeholder="Örn: 49999.99"
-                        />
-                    </label>
-                </div>
-
-                <div className="form-section">
                     <h3>Kart Bilgileri</h3>
+
+                    <p className="form-hint">
+                        Iyzico sandbox test kartı: 5528790000000008 / 12 / 2030 / 123
+                    </p>
 
                     <label>
                         Kart Sahibi
@@ -118,6 +166,7 @@ function Payment() {
                             name="cardHolderName"
                             value={card.cardHolderName}
                             onChange={handleCardChange}
+                            placeholder="John Doe"
                         />
                     </label>
 
@@ -127,6 +176,7 @@ function Payment() {
                             name="cardNumber"
                             value={card.cardNumber}
                             onChange={handleCardChange}
+                            placeholder="5528790000000008"
                         />
                     </label>
 
@@ -137,6 +187,7 @@ function Payment() {
                                 name="expireMonth"
                                 value={card.expireMonth}
                                 onChange={handleCardChange}
+                                placeholder="12"
                             />
                         </label>
 
@@ -146,12 +197,18 @@ function Payment() {
                                 name="expireYear"
                                 value={card.expireYear}
                                 onChange={handleCardChange}
+                                placeholder="2030"
                             />
                         </label>
 
                         <label>
                             CVC
-                            <input name="cvc" value={card.cvc} onChange={handleCardChange} />
+                            <input
+                                name="cvc"
+                                value={card.cvc}
+                                onChange={handleCardChange}
+                                placeholder="123"
+                            />
                         </label>
                     </div>
                 </div>
@@ -231,7 +288,11 @@ function Payment() {
 
                 {error && <p className="error-message">{error}</p>}
 
-                <button className="primary-button" type="submit" disabled={loading}>
+                <button
+                    className="primary-button"
+                    type="submit"
+                    disabled={loading || !order}
+                >
                     {loading ? "Ödeme yapılıyor..." : "Ödemeyi Tamamla"}
                 </button>
             </form>

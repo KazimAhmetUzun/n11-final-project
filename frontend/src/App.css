@@ -307,3 +307,24 @@
         flex-direction: column;
     }
 }
+.payment-order-summary {
+    background-color: white;
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.payment-total {
+    color: #ff6b00;
+    font-size: 20px;
+}
+
+.form-hint {
+    margin: 0;
+    padding: 10px 12px;
+    background-color: #fff3e8;
+    border-radius: 8px;
+    color: #8a4300;
+    font-size: 14px;
+}

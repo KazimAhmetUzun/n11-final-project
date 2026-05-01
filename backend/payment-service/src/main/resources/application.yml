@@ -50,3 +50,6 @@ iyzico:
   api-key: ${IYZICO_API_KEY}
   secret-key: ${IYZICO_SECRET_KEY}
   base-url: https://sandbox-api.iyzipay.com
+services:
+  order-service:
+    url: http://localhost:8084

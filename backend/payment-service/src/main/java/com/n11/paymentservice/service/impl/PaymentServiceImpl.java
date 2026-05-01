@@ -10,6 +10,9 @@ import com.n11.paymentservice.repository.PaymentRepository;
 import com.n11.paymentservice.request.PaymentRequest;
 import com.n11.paymentservice.response.PaymentResponse;
 import com.n11.paymentservice.service.PaymentService;
+import com.n11.paymentservice.client.OrderClient;
+import com.n11.paymentservice.client.OrderResponse;
+import com.n11.paymentservice.exception.PaymentAmountMismatchException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,11 +28,29 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentResultPublisher paymentResultPublisher;
     private final IyzicoPaymentClient iyzicoPaymentClient;
+    private final OrderClient orderClient;
 
     @Override
     public PaymentResponse pay(PaymentRequest request) {
         log.info("Iyzico payment request received. orderId={}, userEmail={}, amount={}",
                 request.getOrderId(), request.getUserEmail(), request.getAmount());
+
+        OrderResponse order = orderClient.getOrderById(request.getOrderId());
+
+        if (order == null) {
+            throw new IllegalArgumentException("Order not found with id: " + request.getOrderId());
+        }
+
+        if (request.getAmount().compareTo(order.getTotalPrice()) != 0) {
+            log.warn("Payment amount mismatch. orderId={}, requestAmount={}, orderAmount={}",
+                    request.getOrderId(), request.getAmount(), order.getTotalPrice());
+
+            throw new PaymentAmountMismatchException(
+                    request.getOrderId(),
+                    request.getAmount(),
+                    order.getTotalPrice()
+            );
+        }
 
         com.iyzipay.model.Payment iyzicoPayment = iyzicoPaymentClient.createPayment(request);
 
