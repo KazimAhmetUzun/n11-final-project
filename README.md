@@ -244,7 +244,7 @@ After login, cart, order, and payment requests use the logged-in user's email.
 
 ### Product Pagination Flow
 
-The product listing page displays 12 products per page.
+The product listing page displays 10 products per page.
 
 ```http
 GET http://localhost:8080/api/products?page=0&size=12
@@ -256,9 +256,9 @@ Expected response structure:
 {
   "content": [],
   "page": 0,
-  "size": 12,
+  "size": 10,
   "totalElements": 24,
-  "totalPages": 2,
+  "totalPages": 3,
   "last": false
 }
 ```
