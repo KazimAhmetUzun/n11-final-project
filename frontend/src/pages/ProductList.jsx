@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getProducts } from "../api/productApi";
 
+const PAGE_SIZE = 10;
+
 function ProductList() {
     const [products, setProducts] = useState([]);
     const [pageInfo, setPageInfo] = useState({
         page: 0,
-        size: 10,
+        size: PAGE_SIZE,
         totalPages: 0,
         last: false,
     });
@@ -18,7 +20,7 @@ function ProductList() {
             setLoading(true);
             setError("");
 
-            const data = await getProducts(page, 10);
+            const data = await getProducts(page, PAGE_SIZE);
 
             setProducts(data.content || []);
             setPageInfo({
@@ -75,6 +77,7 @@ function ProductList() {
 
                         <p>Stok: {product.stock}</p>
                         <p>Kategori: {product.categoryName}</p>
+
                         <Link to={`/products/${product.id}`} className="detail-button">
                             Detaya Git
                         </Link>
